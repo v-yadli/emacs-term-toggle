@@ -41,7 +41,6 @@
 ;;; of the terminal. When there's no process running in *terminal*
 ;;; buffer, it will fire up another one.
 
-
 ;;; Installation:
 ;;;
 ;;; o Place this file in a directory in your 'load-path.
@@ -82,20 +81,17 @@
 (require 'eshell)
 (require 'esh-mode)
 
-;;;###autoload
 (defgroup term-toggle nil
   "Quake style console toggle in current working directory.
 Support toggle for term and eshell."
   :prefix "term-toggle-"
   :group 'tools)
 
-;;;###autoload
 (defcustom term-toggle-no-confirm-exit nil
   "Don't ask to confirm exit if there is a running bash process in terminal."
   :type 'boolean
   :group 'term-toggle)
 
-;;;###autoload
 (defcustom term-toggle-goto-eob t
   "*If non-nil `term-toggle' will move point to the end of the shell-buffer
 whenever the `term-toggle' switched to the shell-buffer.
@@ -105,17 +101,14 @@ shell-buffer"
   :type 'boolean
   :group 'term-toggle)
 
-;;;###autoload
 (defcustom term-toggle-minimum-split-height 10
   "The minimum height of a splittable window"
   :type 'fixnum
   :group 'term-toggle)
 
-;;;###autoload
 (defvar term-toggle-default-height 15
   "The default height of a splitted window")
 
-;;;###autoload
 (defvar term-toggle-automatic-cd t
   "*If non-nil `term-toggle-cd' will send the \"cd\" command to the shell.
 If nil `term-toggle-cd' will only insert the \"cd\" command in the
