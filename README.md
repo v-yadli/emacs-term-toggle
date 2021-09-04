@@ -17,9 +17,12 @@ download it from the git and install with package with
 
 I will see if they would like to have it in Melpa.
 
+Alternatively you may install it manually, if you don't know how to do it,
+please follow instructions as stated in the therm-toggle.el.
+
 ## Usage
 
-Bind `term-toggle' and `term-toggle-eshell' to kyes of your choice, for example:
+Bind `term-toggle' and `term-toggle-eshell' to keys of your choice, for example:
 
     (define-key global-map [S-f2] #'term-toggle)
     (define-key global-map [f2] #'term-toggle-eshell)
