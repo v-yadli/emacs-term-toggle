@@ -4,9 +4,9 @@
 
 ![Screenshot:](term-toggle.png)
 
-Term-toggle lets you toggle console, either terminal or eshell on and off in a
-with a key shortcut. The console will be opened in the current buffer's default
-directory. 
+Term-toggle lets you toggle console, either terminal or eshell, on and off with
+a key shortcut. The console will be opened in the current buffer's default
+directory.
 
 ## Install
 
@@ -66,3 +66,4 @@ details.
 
 You should have received a copy of the GNU General Public License along with
 this program. If not, see https://www.gnu.org/licenses/.
+
