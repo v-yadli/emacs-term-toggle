@@ -44,6 +44,10 @@
 
 ;; Installation:
 ;;
+;; o Download this file from git. Run M-x package-install-file on this file.
+;;
+;; Alternatively:
+;;
 ;; o Place this file in a directory in your 'load-path.
 ;; o Put the following in your .emacs file:
 ;;   (autoload 'term-toggle "term-toggle"
