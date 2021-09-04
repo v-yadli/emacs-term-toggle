@@ -106,14 +106,18 @@ shell-buffer"
   :type 'fixnum
   :group 'term-toggle)
 
-(defvar term-toggle-default-height 15
-  "The default height of a splitted window")
+(defcustom term-toggle-default-height 15
+  "The default height of a splitted window."
+  :type 'fixnum
+  :group 'term-toggle)
 
-(defvar term-toggle-automatic-cd t
+(defcustom term-toggle-automatic-cd t
   "*If non-nil `term-toggle-cd' will send the \"cd\" command to the shell.
 If nil `term-toggle-cd' will only insert the \"cd\" command in the
 shell-buffer.  Leaving it to the user to press RET to send the command to
-the shell.")
+the shell."
+  :type 'boolean
+  :group 'term-toggle)
 
 ;;;###autoload
 (defun term-toggle-cd ()
