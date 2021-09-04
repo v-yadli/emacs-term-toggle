@@ -27,36 +27,37 @@
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
 ;; Floor, Boston, MA 02110-1301, USA.
 ;;}}}
+
+;;; Commentary:
+;; Derived from Joseph <jixiuf@gmail.com> (URL:
+;; http://www.emacswiki.org/term-toggle.el), this plugin brings up a
+;; quake-style console with commands term-toggle{,-cd}
+;; The major difference with Joseph's version is that maximized
+;; console feature is removed (in the original version sometimes it
+;; gets stuck in maximized state, possibly because the window
+;; configuration is corrupted). Also, this plugin determines whether
+;; to split a new window for the console, or replace the buffer of
+;; current selected window if height is not enough for a
+;; split. Another feature is that this plugin will detect the status
+;; of the terminal. When there's no process running in *terminal*
+;; buffer, it will fire up another one.
 
-;;; Commentary: Derived from Joseph <jixiuf@gmail.com> (URL:
-;;; http://www.emacswiki.org/term-toggle.el), this plugin brings up a
-;;; quake-style console with commands term-toggle{,-cd}
-;;; The major difference with Joseph's version is that maximized
-;;; console feature is removed (in the original version sometimes it
-;;; gets stuck in maximized state, possibly because the window
-;;; configuration is corrupted). Also, this plugin determines whether
-;;; to split a new window for the console, or replace the buffer of
-;;; current selected window if height is not enough for a
-;;; split. Another feature is that this plugin will detect the status
-;;; of the terminal. When there's no process running in *terminal*
-;;; buffer, it will fire up another one.
-
-;;; Installation:
-;;;
-;;; o Place this file in a directory in your 'load-path.
-;;; o Put the following in your .emacs file:
-;;;   (autoload 'term-toggle "term-toggle"
-;;;    "Toggles between the *terminal* buffer and whatever buffer you are editing."
-;;;    t)
-;;;   (autoload 'term-toggle-cd "term-toggle"
-;;;    "Pops up a shell-buffer and insert a \"cd <file-dir>\" command." t)
-;;;   (global-set-key [M-f1] 'term-toggle)
-;;;   (global-set-key [C-f1] 'term-toggle-cd)
-;;; o Restart your Emacs.  To use term-toggle just hit M-f1 or C-f1
-;;;
+;; Installation:
+;;
+;; o Place this file in a directory in your 'load-path.
+;; o Put the following in your .emacs file:
+;;   (autoload 'term-toggle "term-toggle"
+;;    "Toggles between the *terminal* buffer and whatever buffer you are editing."
+;;    t)
+;;   (autoload 'term-toggle-cd "term-toggle"
+;;    "Pops up a shell-buffer and insert a \"cd <file-dir>\" command." t)
+;;   (global-set-key [M-f1] 'term-toggle)
+;;   (global-set-key [C-f1] 'term-toggle-cd)
+;; o Restart your Emacs.  To use term-toggle just hit M-f1 or C-f1
+;;
 ;;; Changes:
-;;; 2021-09-04 A. Miller added support to exit term without quering for exit-confirm.
-;;; 2019-01-23 A. Miller: added eshell toggle
+;; 2021-09-04 A. Miller added support to exit term without quering for exit-confirm.
+;; 2019-01-23 A. Miller: added eshell toggle
 
 ;;; Commands:
 ;;
@@ -71,16 +72,8 @@
 ;;  `term-toggle-eshell'
 ;;    Toggles between the *eshell* buffer and whatever buffer you are editing.
 ;;
+
 ;;; Customizable Options:
-;;
-;; Below are customizable option list:
-;;
-
-
-(require 'term)
-(require 'eshell)
-(require 'esh-mode)
-
 (defgroup term-toggle nil
   "Quake style console toggle in current working directory.
 Support toggle for term and eshell."
@@ -118,6 +111,11 @@ shell-buffer.  Leaving it to the user to press RET to send the command to
 the shell."
   :type 'boolean
   :group 'term-toggle)
+
+;;; Commands
+(require 'term)
+(require 'eshell)
+(require 'esh-mode)
 
 ;;;###autoload
 (defun term-toggle-cd ()
@@ -171,8 +169,7 @@ of a split.  Options: `term-toggle-goto-eob'"
               (bury-buffer))
           (delete-window shell-window))
       (term-toggle-buffer-goto-eshell make-cd))))
-
-;;; ======================================================================
+
 ;;; Internal functions and declarations
 
 (defvar term-toggle--replaced-buffer nil
@@ -289,5 +286,4 @@ the same window selected"
 (provide 'term-toggle)
 
 ;;; term-toggle.el ends here
-
 ;;; LocalWords:  el eshell term bash shell toggle
