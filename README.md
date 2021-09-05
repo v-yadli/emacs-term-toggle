@@ -39,6 +39,14 @@ you don't need to confirm exit from the term because of the live bash process:
 
     (setq term-toggle-no-confirm-exit t)
 
+Optionally you can also customize option to kill-buffer and exit terminal window
+when shell process has exited:
+
+    (setq term-toggle-kill-buffer-on-term-exit t)
+
+This way, if you press Ctrl+D in you shell window, term buffer and window will be
+killed too.
+
 ## History
 
 Derived from [Joseph's](https://www.emacswiki.org/emacs/term-toggle.el), this
