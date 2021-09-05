@@ -2,7 +2,7 @@
 
 ;; Filename: term-toggle.el
 ;; Description: Toggle a dedicated terminal
-;; Author: Yatao <yatao.li@live.com>, Arthur <arthur.miller@live.com>
+;; Author: Joseph <jixiuf@gmail.com>, Yatao <yatao.li@live.com>, Arthur <arthur.miller@live.com>
 ;; Created: 2011-03-02
 ;; Changed: 2021-09.04
 ;; Version: 0.9
