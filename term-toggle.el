@@ -82,7 +82,7 @@
   "Quake style console toggle in current working directory.
 Support toggle for term and eshell."
   :prefix "term-toggle-"
-  :group 'tools)
+  :group 'applications)
 
 (defcustom term-toggle-no-confirm-exit nil
   "Don't ask to confirm exit if there is a running bash process in terminal."
@@ -113,7 +113,7 @@ shell-buffer"
   :type 'fixnum
   :group 'term-toggle)
 
-(defcustom term-toggle-automatic-cd t
+(defcustom term-toggle-auto-cd t
   "*If non-nil `term-toggle-cd' will send the \"cd\" command to the shell.
 If nil `term-toggle-cd' will only insert the \"cd\" command in the
 shell-buffer.  Leaving it to the user to press RET to send the command to
@@ -126,34 +126,22 @@ the shell."
 (require 'eshell)
 (require 'esh-mode)
 
-(defvar term-toggle--replaced-buffer nil
+(defvar tt--replaced-buffer nil
   "Indicator for the term toggle behavior. When set to t, the term
   buffer will appear in the selected window instead of split it.")
 
-(defvar term-toggle--no-query-defined t
+(defvar tt--no-query-defined t
   "Indicator for the term toggle that user has set no-query-on-exit flag.
 Internal don't use.")
 
-(defvar term-toggle--no-kill-on-exit-defined t
+(defvar tt--no-kill-on-exit-defined t
   "Indicator for the term toggle that user has set kill-buffer-on-exit flag.")
 
-(defun term-toggle--fire-up-shell ()
-  "Fires up a shell."
-  (condition-case the-error
-      (term (getenv "SHELL"))
-    (error (switch-to-buffer "*terminal*"))))
-
-(defun term-toggle--fire-up-eshell ()
-  "Fires up an eshell."
-  (condition-case the-error
-      (eshell)
-    (error (switch-to-buffer "*eshell*"))))
-
-(defun term-toggle-no-confirm-exit ()
+(defun tt--no-confirm-exit ()
   (let ((process (get-buffer-process (current-buffer))))
     (when (processp process) (set-process-query-on-exit-flag process nil))))
 
-(defun term-toggle-kill-buffer-on-term-exit ()
+(defun tt--kill-buffer-on-term-exit ()
   (let ((buff (current-buffer))
         (proc (get-buffer-process (current-buffer))))
     (lexical-let ((buffer buff))
@@ -163,154 +151,139 @@ Internal don't use.")
 
 (defun term-toggle-setup-exit ()
   (if term-toggle-no-confirm-exit
-      (when term-toggle--no-query-defined
-        (add-hook 'term-exec-hook 'term-toggle-no-confirm-exit)
-        (setq term-toggle--no-query-defined nil))
-    (unless term-toggle--no-query-defined
-      (remove-hook 'term-exec-hook 'term-toggle-no-confirm-exit)
-      (setq term-toggle--no-query-defined t)))
+      (when tt--no-query-defined
+        (add-hook 'term-exec-hook 'tt--no-confirm-exit)
+        (setq tt--no-query-defined nil))
+    (unless tt--no-query-defined
+      (remove-hook 'term-exec-hook 'tt--no-confirm-exit)
+      (setq tt--no-query-defined t)))
   (if term-toggle-kill-buffer-on-term-exit
-      (when term-toggle--no-kill-on-exit-defined
-        (add-hook 'term-exec-hook 'term-toggle-kill-buffer-on-term-exit)
-        (setq term-toggle--no-kill-on-exit-defined nil))
-    (unless term-toggle--no-kill-on-exit-defined
-      (remove-hook 'term-exec-hook 'term-toggle-kill-buffer-on-term-exit)
-      (setq term-toggle--no-kill-on-exit-defined nil))))
+      (when tt--no-kill-on-exit-defined
+        (add-hook 'term-exec-hook 'tt--kill-buffer-on-term-exit)
+        (setq tt--no-kill-on-exit-defined nil))
+    (unless tt--no-kill-on-exit-defined
+      (remove-hook 'term-exec-hook 'tt--kill-buffer-on-term-exit)
+      (setq tt--no-kill-on-exit-defined nil))))
 
-(defun term-toggle-buffer-goto-shell (make-cd)
+(defun tt--get-buffer (shell)
+  "If there is a buffer return buffer, otherwise string that can be used as a
+buffer name."
+  (when (eq shell 'term)
+    (setq shell "terminal"))
+  (let* ((name (format "*%s*" shell))
+         (buffer (get-buffer name)))
+  (if buffer buffer name)))
+
+(defun tt--autocd (shell cd-command)
+  (if (and cd-command term-toggle-auto-cd)
+      (cond ((or (eq shell 'shell) (eq shell 'term) (eq shell 'ansi-term))
+             (term-send-raw-string (concat cd-command "\n")))
+            ((or (eq shell 'eshell) (eq shell 'ielm))
+             (comint-send-input (concat cd-command "\n"))))))
+
+(defun tt--fire-up-shell (shell)
+  "Fires up a shell."
+  (condition-case the-error
+      (cond ((or (eq shell 'shell) (eq shell 'term) (eq shell 'ansi-term))
+             (let ((cmd (getenv "SHELL")))
+               (funcall shell cmd)))
+            ((or (eq shell 'eshell) (eq shell 'ielm))
+             (funcall shell)))
+    (error (switch-to-buffer (tt--get-buffer shell)))))
+
+(defun tt--buffer-goto-shell (shell make-cd)
   "Switches other window to the *terminal* buffer.  If no *terminal*
 buffer exists start a new shell and switch to it in a window (see
 `term-toggle-buffer-switch-to-window' for the algorithm).  If argument
 MAKE-CD is non-nil, insert a \"cd DIR\" command into the shell, where
 DIR is the directory of the current buffer."
-  (let ((shell-buffer (get-buffer "*terminal*"))
-	(cd-command
-	 ;; Find out which directory we are in (the method differs for
-	 ;; different buffers)
-	 (or (and make-cd
-		  (buffer-file-name)
-		  (file-name-directory (buffer-file-name))
-		  (concat "cd " (file-name-directory (buffer-file-name))))
-	     (and make-cd
-		  list-buffers-directory
-		  (concat "cd " list-buffers-directory)))))
-    (term-toggle-setup-exit)
-    (term-toggle-buffer-switch-to-window)
+  (let ((shell-buffer (tt--get-buffer shell))
+	(cd-command (concat "cd " default-directory)))
+    (unless (or (eq shell 'eshell) (eq shell 'ielm))
+         (term-toggle-setup-exit))
+    (tt--buffer-switch-to-window)
     (if shell-buffer
         (progn
           (switch-to-buffer shell-buffer)
-          (if (not (term-check-proc shell-buffer))
-              (progn
-                (kill-buffer shell-buffer)
-                (term-toggle--fire-up-shell))))
-      (term-toggle--fire-up-shell))
+          (unless (and (eq shell 'ielm) (eq shell 'eshell))
+            (unless (term-check-proc shell-buffer)
+              (kill-buffer shell-buffer)
+              (tt--fire-up-shell shell))
+            (if (or cd-command term-toggle-goto-eob)
+                (term-send-del))))
+      (tt--fire-up-shell shell))
     (set-window-dedicated-p (selected-window) t)
-    (if (or cd-command term-toggle-goto-eob)
-        (term-send-del))
-    (if (and cd-command term-toggle-automatic-cd)
-        (term-send-raw-string (concat cd-command "\n")))))
+    (tt--autocd shell cd-command)))
 
-(defun term-toggle-buffer-goto-eshell (make-cd)
-  "Switches other window to the *eshell* buffer.  If no *eshell*
-buffer exists start a new eshell buffer and switch to it in a window (see
-`term-toggle-buffer-switch-to-window' for the algorithm).  If argument
-MAKE-CD is non-nil, insert a \"cd DIR\" command into the eshell, where
-DIR is the directory of the current buffer."
-  (let ((eshell-buffer (get-buffer "*eshell*"))
-	(cd-command
-	 ;; Find out which directory we are in (the method differs for
-	 ;; different buffers)
-	 (or (and make-cd
-		  (buffer-file-name)
-		  (file-name-directory (buffer-file-name))
-		  (concat "cd " (file-name-directory (buffer-file-name))))
-	     (and make-cd
-		  list-buffers-directory
-		  (concat "cd " list-buffers-directory)))))
-
-    (term-toggle-buffer-switch-to-window)
-    (if eshell-buffer
-        (switch-to-buffer eshell-buffer)
-      (term-toggle--fire-up-eshell))
-    (set-window-dedicated-p (selected-window) t)
-    (if (and cd-command term-toggle-automatic-cd)
-        (eshell-send-input (concat cd-command "\n")))))
-
-(defun term-toggle-buffer-switch-to-window ()
+(defun tt--buffer-switch-to-window ()
   "Switches to a window. If the current window has a splittable size
 \\(in height\\), split it and switch to the bottom part.  Otherwise, use
-this window and mark the `term-toggle--replaced-buffer' flag and keep
+this window and mark the `tt--replaced-buffer' flag and keep
 the same window selected"
   (let ((this-window (selected-window)))
     (if (>=
          (window-total-height this-window)
          term-toggle-minimum-split-height)
 	(progn
-          (setq term-toggle--replaced-buffer nil)
+          (setq tt--replaced-buffer nil)
 	  (split-window-vertically)
           (other-window 1)
           (setq this-window (selected-window))
           (let ((delta (- (window-height this-window) term-toggle-default-height)))
             (if (> delta 0)
                 (shrink-window delta))))
-      (setq term-toggle--replaced-buffer t))))
-
-;;; Commands
+      (setq tt--replaced-buffer t))))
 
-;;;###autoload
-(defun term-toggle-cd ()
-  "Calls `term-toggle' with a prefix argument.  Se command `term-toggle'"
-  (interactive)
-  (term-toggle t))
-
-;;;###autoload
-(defun term-toggle-eshell-cd ()
-  "Calls `term-toggle' with a prefix argument.  Se command `term-toggle'"
-  (interactive)
-  (term-toggle-eshell t))
-
-;;;###autoload
-(defun term-toggle (make-cd)
+(defun term-toggle (shell make-cd)
   "Toggles between the *terminal* buffer and whatever buffer you are
 editing.  With a prefix ARG also insert a \"cd DIR\" command into the
 shell, where DIR is the directory of the current buffer.
 When called in the *terminal* buffer, the terminal window is
 closed. The original buffer will be restored if it's a replace instead
 of a split.  Options: `term-toggle-goto-eob'"
-  (interactive "P")
   ;; If the terminal window exists, kill it
   ;; Otherwise, bring it on.
-  (let ((shell-window (get-buffer-window "*terminal*" t)))
+  (let ((shell-window (get-buffer-window (tt--get-buffer shell) t)))
     (if shell-window
-        (if term-toggle--replaced-buffer
+        (if tt--replaced-buffer
             (progn
               (set-window-dedicated-p shell-window nil)
               (bury-buffer))
           (delete-window shell-window))
-      (term-toggle-buffer-goto-shell make-cd)))
-  ) ;Disable the double-in-a-row crap(which doesn't work sometimes)
+      (tt--buffer-goto-shell shell make-cd))))
+
+;;; Commands
 
 ;;;###autoload
-(defun term-toggle-eshell (make-cd)
-  "Toggles between the *eshell* buffer and whatever buffer you are
-editing.  With a prefix ARG also insert a \"cd DIR\" command into the
-shell, where DIR is the directory of the current buffer.
-When called in the *terminal* buffer, the terminal window is
-closed. The original buffer will be restored if it's a replace instead
-of a split.  Options: `term-toggle-goto-eob'"
-  (interactive "P")
-  ;; If the terminal window exists, kill it
-  ;; Otherwise, bring it on.
-  (let ((shell-window (get-buffer-window "*eshell*" t)))
-    (if shell-window
-        (if term-toggle--replaced-buffer
-            (progn
-              (set-window-dedicated-p shell-window nil)
-              (bury-buffer))
-          (delete-window shell-window))
-      (term-toggle-buffer-goto-eshell make-cd))))
+(defun term-toggle-term ()
+  "Calls `term-toggle' with a prefix argument.  Se command `term-toggle'"
+  (interactive)
+  (term-toggle 'term t))
+
+;;;###autoload
+(defun term-toggle-shell ()
+  "Calls `term-toggle' with a prefix argument.  Se command `term-toggle'"
+  (interactive)
+  (term-toggle 'shell t))
+
+;;;###autoload
+(defun term-toggle-ansi ()
+  "Calls `term-toggle' with a prefix argument.  Se command `term-toggle'"
+  (interactive)
+  (term-toggle 'ansi-term t))
+
+;;;###autoload
+(defun term-toggle-eshell ()
+  "Calls `term-toggle' with a prefix argument.  Se command `term-toggle'"
+  (interactive)
+  (term-toggle 'eshell t))
+
+;;;###autoload
+(defun term-toggle-ielm ()
+  "Calls `term-toggle' with a prefix argument.  Se command `term-toggle'"
+  (interactive)
+  (term-toggle 'ielm t))
 
 (provide 'term-toggle)
 
 ;;; term-toggle.el ends here
-;;; LocalWords:  el eshell term bash shell toggle
