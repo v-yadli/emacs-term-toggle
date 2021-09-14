@@ -137,6 +137,9 @@ Internal don't use.")
         (remove-hook 'term-exec-hook 'tt--kill-buffer-on-term-exit)
         (setq tt--no-kill-on-exit-defined nil)))))
 
+(defun tt--uses-external-proc (shell)
+  (or (eq shell 'shell) (eq shell 'term) (eq shell 'ansi-term)))
+
 (defun tt--get-buffer (shell)
   "If there is a buffer return buffer, otherwise string that can be used as a
 buffer name."
@@ -148,13 +151,9 @@ buffer name."
 
 (defun tt--autocd (shell cd-command)
   (if (and cd-command term-toggle-auto-cd)
-      (cond ((or (eq shell 'shell) (eq shell 'term) (eq shell 'ansi-term))
-             (term-send-raw-string (concat cd-command "\n")))
-            ((or (eq shell 'eshell) (eq shell 'ielm))
-             (comint-send-input (concat cd-command "\n"))))))
-
-(defun tt--uses-external-proc (shell)
-  (or (eq shell 'shell) (eq shell 'term) (eq shell 'ansi-term)))
+      (if (tt--uses-external-proc shell)
+          (term-send-raw-string (concat cd-command "\n"))
+        (comint-send-input (concat cd-command "\n")))))
 
 (defun tt--fire-up-shell (shell)
   "Fires up a shell."
