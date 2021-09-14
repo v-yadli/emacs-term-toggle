@@ -16,7 +16,7 @@ For the moment this is not in any package repository, so you will have to downlo
 
 I will see if they would like to have it in Melpa.
 
-Alternatively you may install it manually, if you don't know how to do it, please follow instructions as stated in the therm-toggle.el.
+Alternatively you may install it manually by adding term-toggle.el to your load path and either generating autoloads, or require term-toggle.el when Emacs starts.
 
 ## Usage
 

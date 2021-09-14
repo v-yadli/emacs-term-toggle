@@ -10,7 +10,7 @@
 ;; Keywords:  term toggle shell
 ;; Compatibility: (Test on GNU Emacs 24.3.1, 27.*, 28.0.50).
 ;;
-;;{{{ License
+;;; License
 ;;
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 ;; along with this program; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
 ;; Floor, Boston, MA 02110-1301, USA.
-;;}}}
+;;
 
 ;;; Commentary:
 ;; Derived from Joseph <jixiuf@gmail.com> (URL:
@@ -42,40 +42,11 @@
 ;; of the terminal. When there's no process running in *terminal*
 ;; buffer, it will fire up another one.
 
-;; Installation:
-;;
-;; o Download this file from git. Run M-x package-install-file on this file.
-;;
-;; Alternatively:
-;;
-;; o Place this file in a directory in your 'load-path.
-;; o Put the following in your .emacs file:
-;;   (autoload 'term-toggle "term-toggle"
-;;    "Toggles between the *terminal* buffer and whatever buffer you are editing."
-;;    t)
-;;   (autoload 'term-toggle-cd "term-toggle"
-;;    "Pops up a shell-buffer and insert a \"cd <file-dir>\" command." t)
-;;   (global-set-key [M-f1] 'term-toggle)
-;;   (global-set-key [C-f1] 'term-toggle-cd)
-;; o Restart your Emacs.  To use term-toggle just hit M-f1 or C-f1
-;;
 ;;; Changes:
+;; 2021-09-13 A. Miller added support for shell, ansi-term and ielm.
 ;; 2021-09-04 A. Miller added support to exit term without quering for exit-confirm.
-;; 2019-01-23 A. Miller: added eshell toggle
+;; 2019-01-23 A. Miller added eshell toggle
 
-;;; Commands:
-;;
-;; Below are complete command list:
-;;
-;;  `term-toggle-cd'
-;;    Calls `term-toggle' with a prefix argument.  Se command `term-toggle'
-;;  `term-toggle'
-;;    Toggles between the *eshell* buffer and whatever buffer you are editing.
-;;  `term-toggle-eshell-cd'
-;;    Calls `term-toggle-eshell' with a prefix argument.  Se command `term-toggle-eshell'
-;;  `term-toggle-eshell'
-;;    Toggles between the *eshell* buffer and whatever buffer you are editing.
-;;
 
 ;;; Customizable Options:
 (defgroup term-toggle nil
@@ -149,21 +120,22 @@ Internal don't use.")
                                       (if (string= event "\\(?:finished\\|exited\\)")
                                           (kill-buffer buffer)))))))
 
-(defun term-toggle-setup-exit ()
-  (if term-toggle-no-confirm-exit
-      (when tt--no-query-defined
-        (add-hook 'term-exec-hook 'tt--no-confirm-exit)
-        (setq tt--no-query-defined nil))
-    (unless tt--no-query-defined
-      (remove-hook 'term-exec-hook 'tt--no-confirm-exit)
-      (setq tt--no-query-defined t)))
-  (if term-toggle-kill-buffer-on-term-exit
-      (when tt--no-kill-on-exit-defined
-        (add-hook 'term-exec-hook 'tt--kill-buffer-on-term-exit)
-        (setq tt--no-kill-on-exit-defined nil))
-    (unless tt--no-kill-on-exit-defined
-      (remove-hook 'term-exec-hook 'tt--kill-buffer-on-term-exit)
-      (setq tt--no-kill-on-exit-defined nil))))
+(defun tt--setup-exit (shell)
+  (when (tt--uses-external-proc shell)
+    (if term-toggle-no-confirm-exit
+        (when tt--no-query-defined
+          (add-hook 'term-exec-hook 'tt--no-confirm-exit)
+          (setq tt--no-query-defined nil))
+      (unless tt--no-query-defined
+        (remove-hook 'term-exec-hook 'tt--no-confirm-exit)
+        (setq tt--no-query-defined t)))
+    (if term-toggle-kill-buffer-on-term-exit
+        (when tt--no-kill-on-exit-defined
+          (add-hook 'term-exec-hook 'tt--kill-buffer-on-term-exit)
+          (setq tt--no-kill-on-exit-defined nil))
+      (unless tt--no-kill-on-exit-defined
+        (remove-hook 'term-exec-hook 'tt--kill-buffer-on-term-exit)
+        (setq tt--no-kill-on-exit-defined nil)))))
 
 (defun tt--get-buffer (shell)
   "If there is a buffer return buffer, otherwise string that can be used as a
@@ -181,14 +153,15 @@ buffer name."
             ((or (eq shell 'eshell) (eq shell 'ielm))
              (comint-send-input (concat cd-command "\n"))))))
 
+(defun tt--uses-external-proc (shell)
+  (or (eq shell 'shell) (eq shell 'term) (eq shell 'ansi-term)))
+
 (defun tt--fire-up-shell (shell)
   "Fires up a shell."
   (condition-case the-error
-      (cond ((or (eq shell 'shell) (eq shell 'term) (eq shell 'ansi-term))
-             (let ((cmd (getenv "SHELL")))
-               (funcall shell cmd)))
-            ((or (eq shell 'eshell) (eq shell 'ielm))
-             (funcall shell)))
+      (if (tt--uses-external-proc shell)
+          (funcall shell (getenv "SHELL"))
+        (funcall shell))
     (error (switch-to-buffer (tt--get-buffer shell)))))
 
 (defun tt--buffer-goto-shell (shell make-cd)
@@ -199,13 +172,12 @@ MAKE-CD is non-nil, insert a \"cd DIR\" command into the shell, where
 DIR is the directory of the current buffer."
   (let ((shell-buffer (tt--get-buffer shell))
 	(cd-command (concat "cd " default-directory)))
-    (unless (or (eq shell 'eshell) (eq shell 'ielm))
-         (term-toggle-setup-exit))
+    (tt--setup-exit shell)
     (tt--buffer-switch-to-window)
     (if shell-buffer
         (progn
           (switch-to-buffer shell-buffer)
-          (unless (and (eq shell 'ielm) (eq shell 'eshell))
+          (when (tt--uses-external-proc shell)
             (unless (term-check-proc shell-buffer)
               (kill-buffer shell-buffer)
               (tt--fire-up-shell shell))
