@@ -146,7 +146,7 @@ Internal don't use.")
         (proc (get-buffer-process (current-buffer))))
     (lexical-let ((buffer buff))
       (set-process-sentinel proc (lambda (__p event)
-                                      (if (string= event "finished\n")
+                                      (if (string= event "\\(?:finished\\|exited\\)")
                                           (kill-buffer buffer)))))))
 
 (defun term-toggle-setup-exit ()
