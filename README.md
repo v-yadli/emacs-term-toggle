@@ -4,9 +4,20 @@
 
 ![Screenshot:](term-toggle.png)
 
-Term-toggle lets you toggle shells that come built-in with Emacs. Currently you can toggle shell, term, ansi-term, eshell, and ielm. You can put each one on a keyboard shortcut and toggle a console off and on as needed. The console will be
+Term-toggle lets you quickly toggle shells that come built-in with Emacs. Currently it can toggle shell, term, ansi-term, eshell, and ielm. You can put each one on a keyboard shortcut and toggle a console off and on as needed. The console will be
 opened in the current buffer's default directory. This applicaiton is similar to [shell-pop](https://github.com/kyagi/shell-pop-el), but this one lets you have different terminals open at once, while shell-pop works only on pre-defined
-one. I like to be able to work both with ielm/eshell and open a terminal from time to time, so I don't want to have just one pre-defined terminal I can pop back and forth.
+one. I like to be able to work both with ielm/eshell and open a terminal from time to time, so I don't want to have just one pre-defined terminal I can pop back and forth. Term-toggle is also much lighter in resource usage and with somewhat
+less features than shell-pop. Most notably you can't easily add your own shell via an API, but it is so small, so you can easily hack it in :). 
+
+It is al about cnvenicence and minimalism. I personally really care only about eshell, term and ielm, and wish to be able to toggle them on and off quickly. When I wish to kill a term, I don't want to answer y-or-no questions, so it has
+features to quickly kill buffer or it's process.
+
+## Features
+
+ - very minimalistic and light on resources
+ - multiples shells out of the box
+ - automatically exit process when console buffer is killed
+ - automatically kill buffer and its window when shell is exited
 
 ## Install
 
