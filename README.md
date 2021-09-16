@@ -15,7 +15,7 @@ features to quickly kill buffer or it's process.
 ## Features
 
  - very minimalistic and light on resources
- - multiples shells out of the box
+ - multiple shells out of the box
  - automatically exit process when console buffer is killed
  - automatically kill buffer and its window when shell is exited
 
@@ -33,10 +33,10 @@ Alternatively you may install it manually by adding term-toggle.el to your load 
 
 Bind `term-toggle' and `term-toggle-eshell' to keys of your choice, for example:
 
-    (define-key global-map [S-f2] #'term-toggle)
+    (define-key global-map [S-f2] #'term-toggle-ansi)
     (define-key global-map [f2] #'term-toggle-eshell)
 
-We this setup you can press F2 to toggle eshell, or S-F2 to open term, when you press it again it will go away.
+We this setup you can press F2 to toggle eshell, or S-F2 to open anis-term, when you press it again it will go away.
 
 The term/eshell buffer will not get killed, just burried down so they are not in the way.
 
