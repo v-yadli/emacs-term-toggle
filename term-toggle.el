@@ -53,7 +53,6 @@
   "Quake style console toggle in current working directory.
 Support toggle for shell, term, ansi-term, eshell and ielm."
   :prefix "term-toggle-"
-  :prefix "tt-"
   :group 'applications)
 
 (defcustom term-toggle-confirm-exit nil
@@ -77,8 +76,7 @@ Support toggle for shell, term, ansi-term, eshell and ielm."
   :group 'term-toggle)
 
 ;;; Internal functions and declarations
-
-(defun tt--start-shell (shell name)
+(defun term-toggle--start (shell name)
   (cond ((or (eq shell 'term) (eq shell 'ansi-term))
          (funcall shell (getenv "SHELL")))
         (t (funcall shell)))
@@ -91,7 +89,7 @@ Support toggle for shell, term, ansi-term, eshell and ielm."
                     (when (string-match-p "\\(?:exited\\|finished\\)" evt)
                       (kill-buffer))))))))
 
-(defun tt--toggle (term-buffer)
+(defun term-toggle--toggle (term-buffer)
   (let ((term-window (get-buffer-window term-buffer)))
     (if term-window
         (progn
@@ -109,12 +107,13 @@ Support toggle for shell, term, ansi-term, eshell and ielm."
                 (shrink-window delta))))))))
 
 (defun term-toggle (shell)
-  (let ((name (format "*%s*" (if (eq shell 'term) "terminal" shell)))
-        (original-buffer (current-buffer)))
-    (unless (get-buffer name)
-      (tt--start-shell shell name)
+  (let* ((name (format "*%s*" (if (eq shell 'term) "terminal" shell)))
+         (shell-buffer (get-buffer name))
+         (original-buffer (current-buffer)))
+    (unless shell-buffer
+      (term-toggle--start shell name)
       (pop-to-buffer-same-window original-buffer))
-    (tt--toggle (get-buffer name))))
+    (term-toggle--toggle shell-buffer)))
 
 ;;; Commands
 ;;;###autoload
