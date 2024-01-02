@@ -77,43 +77,38 @@ Support toggle for shell, term, ansi-term, eshell and ielm."
 
 ;;; Internal functions and declarations
 (defun term-toggle--start (shell name)
-  (cond ((or (eq shell 'term) (eq shell 'ansi-term))
-         (funcall shell (getenv "SHELL")))
-        (t (funcall shell)))
-  (let ((proc (get-buffer-process (get-buffer name))))
-    (when proc
-        (set-process-query-on-exit-flag proc term-toggle-confirm-exit)
-        (if term-toggle-kill-buffer-on-process-exit
-            (set-process-sentinel
-             proc (lambda (__ evt)
-                    (when (string-match-p "\\(?:exited\\|finished\\)" evt)
-                      (kill-buffer))))))))
+  (if (or (eq shell 'term) (eq shell 'ansi-term))
+      (funcall shell (getenv "SHELL"))
+    (funcall shell))
+  (when-let ((proc (get-buffer-process (get-buffer name))))
+    (set-process-query-on-exit-flag proc term-toggle-confirm-exit)
+    (when term-toggle-kill-buffer-on-process-exit
+      (set-process-sentinel
+       proc (lambda (__ evt)
+              (when (string-match-p "\\(?:exited\\|finished\\)" evt)
+                (kill-buffer)))))))
 
 (defun term-toggle--toggle (term-buffer)
-  (let ((term-window (get-buffer-window term-buffer)))
-    (if term-window
-        (progn
-          (bury-buffer term-buffer)
-          (delete-window term-window))
-      (progn
-	(split-window-vertically)
-        (other-window 1)
-        (pop-to-buffer-same-window term-buffer t)
-        (set-window-dedicated-p term-window t)
-        (when (>= (window-total-height (selected-window))
-                  term-toggle-minimum-split-height)
-          (let ((delta (- (window-height (selected-window)) term-toggle-default-height)))
-            (if (> delta 0)
-                (shrink-window delta))))))))
+  (if-let ((term-window (get-buffer-window term-buffer)))
+    (progn
+      (bury-buffer term-buffer)
+      (delete-window term-window))
+    (split-window-vertically)
+    (other-window 1)
+    (pop-to-buffer-same-window term-buffer t)
+    (set-window-dedicated-p term-window t)
+    (when (>= (window-total-height (selected-window))
+              term-toggle-minimum-split-height)
+      (let ((delta (- (window-height (selected-window)) term-toggle-default-height)))
+        (when (> delta 0) (shrink-window delta))))))
 
 (defun term-toggle (shell)
-  (let* ((name (format "*%s*" (if (eq shell 'term) "terminal" shell)))
-         (shell-buffer (get-buffer name))
-         (original-buffer (current-buffer)))
-    (unless shell-buffer
+  (let ((name (format "*%s*" (if (eq shell 'term) "terminal" shell)))
+        (original-buffer (current-buffer)))
+    (unless (get-buffer name)
       (term-toggle--start shell name)
       (pop-to-buffer-same-window original-buffer))
-    (term-toggle--toggle shell-buffer)))
+    (term-toggle--toggle (get-buffer name))))
 
 ;;; Commands
 ;;;###autoload
